@@ -20,7 +20,9 @@
       "Bash(wc -l:*)",
       "Bash(npm install:*)",
       "Bash(node:*)",
-      "Bash(cmd.exe /c \"npm install @tailwindcss/oxide-win32-x64-msvc@4.1.18 --save-optional\")"
+      "Bash(cmd.exe /c \"npm install @tailwindcss/oxide-win32-x64-msvc@4.1.18 --save-optional\")",
+      "Bash(timeout 30 npm run dev:*)",
+      "Bash(timeout 15 npm run dev:*)"
     ]
   }
 }
