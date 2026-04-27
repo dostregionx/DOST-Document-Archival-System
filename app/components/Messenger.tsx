@@ -175,16 +175,43 @@ function ChatWindow({
   }, [conv.id, meId, minimized, messages]);
 
   const send = async () => {
-    if (!input.trim() || sending) return;
+    const text = input.trim();
+    if (!text || sending) return;
+
+    // Optimistic update — show the message instantly before server confirms
+    const tempId = `temp-${Date.now()}`;
+    const storedUser = (() => { try { return JSON.parse(localStorage.getItem('user') ?? '{}'); } catch { return {}; } })();
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: text,
+      senderId: meId,
+      createdAt: new Date().toISOString(),
+      sender: { id: meId, fullName: storedUser.fullName ?? 'You', profileImageUrl: storedUser.profileImageUrl ?? null },
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setInput('');
     setSending(true);
+
     try {
       const res = await fetch(`/api/conversations/${conv.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': meId },
-        body: JSON.stringify({ content: input.trim() }),
+        body: JSON.stringify({ content: text }),
       });
-      if (res.ok) { setInput(''); loadMessages(); }
-    } catch { /* silent */ } finally { setSending(false); }
+      if (res.ok) {
+        // Replace optimistic message with real data from server
+        loadMessages();
+      } else {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        setInput(text);
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInput(text);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -254,7 +281,7 @@ function ChatWindow({
           {/* Messages */}
           <div
             ref={scrollRef}
-            className="overflow-y-auto px-3 py-2 space-y-1"
+            className="overflow-y-auto px-3 py-2 flex flex-col"
             style={{ height: 380, background: '#fff' }}
           >
             {messages.length === 0 ? (
@@ -264,40 +291,42 @@ function ChatWindow({
                 <p className="text-[12px] text-[#65676b]">Say hi to start chatting! 👋</p>
               </div>
             ) : (
-              messages.map((msg, idx) => {
-                const isMe = msg.senderId === meId;
-                const prevMsg = messages[idx - 1];
-                const showAvatar = !isMe && (idx === 0 || prevMsg?.senderId !== msg.senderId);
-                return (
-                  <div key={msg.id} className={`flex items-end gap-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    {!isMe && (
-                      <div style={{ width: 28, flexShrink: 0 }}>
-                        {showAvatar && (
-                          <Avatar src={msg.sender.profileImageUrl} name={msg.sender.fullName} size={28} />
-                        )}
-                      </div>
-                    )}
-                    <div className="flex flex-col" style={{ maxWidth: '72%' }}>
-                      {conv.isGroup && !isMe && showAvatar && (
-                        <span className="text-[10px] text-[#65676b] font-semibold ml-1 mb-0.5">{msg.sender.fullName}</span>
+              <div className="mt-auto flex flex-col gap-1">
+                {messages.map((msg, idx) => {
+                  const isMe = msg.senderId === meId;
+                  const prevMsg = messages[idx - 1];
+                  const showAvatar = !isMe && (idx === 0 || prevMsg?.senderId !== msg.senderId);
+                  return (
+                    <div key={msg.id} className={`flex items-end gap-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      {!isMe && (
+                        <div style={{ width: 28, flexShrink: 0 }}>
+                          {showAvatar && (
+                            <Avatar src={msg.sender.profileImageUrl} name={msg.sender.fullName} size={28} />
+                          )}
+                        </div>
                       )}
-                      <div
-                        className="px-3 py-2 text-[13px] break-words leading-snug"
-                        style={{
-                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                          background: isMe ? '#0084ff' : '#e4e6eb',
-                          color: isMe ? '#fff' : '#050505',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {msg.content}
+                      <div className="flex flex-col" style={{ maxWidth: '72%' }}>
+                        {conv.isGroup && !isMe && showAvatar && (
+                          <span className="text-[10px] text-[#65676b] font-semibold ml-1 mb-0.5">{msg.sender.fullName}</span>
+                        )}
+                        <div
+                          className="px-3 py-2 text-[13px] break-words leading-snug"
+                          style={{
+                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: isMe ? '#0084ff' : '#e4e6eb',
+                            color: isMe ? '#fff' : '#050505',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {msg.content}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+                <div ref={bottomRef} />
+              </div>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {/* Input row */}

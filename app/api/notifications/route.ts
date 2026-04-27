@@ -26,6 +26,26 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Batch mark notifications as read
+export async function PATCH(req: NextRequest) {
+  const userId = getUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const { ids } = await req.json();
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'No ids provided' }, { status: 400 });
+    }
+    await prisma.notification.updateMany({
+      where: { userId, id: { in: ids } },
+      data: { read: true },
+    });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const data = await req.json();
 
