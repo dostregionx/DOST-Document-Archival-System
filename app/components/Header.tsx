@@ -25,6 +25,7 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevPermSigRef = useRef<string>('');
   const router = useRouter();
 
 
@@ -46,22 +47,30 @@ export default function Header() {
           }
 
           // Admins have full access
+          let newPerms: UserPermissions;
           if (user.role === 'ADMIN') {
-            setPermissions({
+            newPerms = {
               canAccessSetup: true,
               canAccessCest: true,
               canAccessMaps: true,
               canAccessCalendar: true,
               canAccessArchival: true,
               canManageUsers: true,
-            });
+            };
           } else {
             // Fetch permissions for staff
             const permRes = await fetch(`/api/user-permissions/${user.id}`);
-            if (permRes.ok) {
-              const permData = await permRes.json();
-              setPermissions(permData);
-            }
+            if (!permRes.ok) return;
+            newPerms = await permRes.json();
+          }
+
+          setPermissions(newPerms);
+
+          // Broadcast permission changes so Sidebar can update without its own polling
+          const sig = JSON.stringify(newPerms);
+          if (sig !== prevPermSigRef.current) {
+            prevPermSigRef.current = sig;
+            window.dispatchEvent(new CustomEvent('permissionsUpdated', { detail: newPerms }));
           }
         }
       }
@@ -79,8 +88,8 @@ export default function Header() {
 
     window.addEventListener('profileImageUpdated', handleProfileUpdate);
 
-    // Poll for permission changes every 3 seconds
-    const pollInterval = setInterval(fetchUserData, 3000);
+    // Poll every 30s as a fallback (instant updates come via permissionsUpdated event)
+    const pollInterval = setInterval(fetchUserData, 30000);
 
     return () => {
       window.removeEventListener('profileImageUpdated', handleProfileUpdate);

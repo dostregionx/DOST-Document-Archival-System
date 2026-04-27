@@ -288,25 +288,39 @@ export default function NotificationDropdown() {
     }, 300);
   }, []);
 
-  const fetchNotifications = useCallback(async () => {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-      const res = await fetch('/api/notifications', {
-        headers: { 'x-user-id': userId },
+  // Process notification data — shared by SSE and initial load
+  const processNotificationData = useCallback((data: Notification[]) => {
+    if (!isInitialLoad.current) {
+      const newNotifications = data.filter(
+        (n) =>
+          !previousNotificationIdsRef.current.has(n.id) &&
+          !shownToastIdsRef.current.has(n.id)
+      );
+      newNotifications.forEach((n) => {
+        shownToastIdsRef.current.add(n.id);
+        const toastNotification: ToastNotification = { ...n, isExiting: false };
+        setToasts((prev) => [...prev, toastNotification]);
+        playNotificationSound();
+        setTimeout(() => {
+          setToasts((prev) => prev.map((t) => (t.id === n.id ? { ...t, isExiting: true } : t)));
+          setTimeout(() => {
+            setToasts((prev) => prev.filter((t) => t.id !== n.id));
+          }, 300);
+        }, 8000);
       });
-      if (res.ok) {
-        const data = await res.json();
+    } else {
+      // On fresh login: show deadline + pending_approval toasts (once per session)
+      const hasShownDeadlineToastsThisSession = sessionStorage.getItem('hasShownDeadlineToasts');
 
-        if (!isInitialLoad.current) {
-          const newNotifications = data.filter(
-            (n: Notification) =>
-              !previousNotificationIdsRef.current.has(n.id) &&
-              !shownToastIdsRef.current.has(n.id)
-          );
-          newNotifications.forEach((n: Notification) => {
-            shownToastIdsRef.current.add(n.id);
+      if (!hasShownDeadlineToastsThisSession && !hasShownLoginDeadlineToasts.current) {
+        const deadlineNotifications = data.filter((n: Notification) => n.type === 'deadline');
+        const pendingApprovalNotifications = getUserRole() === 'ADMIN'
+          ? data.filter((n: Notification) => n.type === 'pending_approval')
+          : [];
+
+        const loginToasts = [...deadlineNotifications, ...pendingApprovalNotifications];
+        loginToasts.forEach((n: Notification, index: number) => {
+          setTimeout(() => {
             const toastNotification: ToastNotification = { ...n, isExiting: false };
             setToasts((prev) => [...prev, toastNotification]);
             playNotificationSound();
@@ -315,50 +329,25 @@ export default function NotificationDropdown() {
               setTimeout(() => {
                 setToasts((prev) => prev.filter((t) => t.id !== n.id));
               }, 300);
-            }, 8000);
-          });
-        } else {
-          // On fresh login: show deadline + pending_approval toasts (once per session)
-          const hasShownDeadlineToastsThisSession = sessionStorage.getItem('hasShownDeadlineToasts');
-
-          if (!hasShownDeadlineToastsThisSession && !hasShownLoginDeadlineToasts.current) {
-            const deadlineNotifications = data.filter((n: Notification) => n.type === 'deadline');
-            const pendingApprovalNotifications = getUserRole() === 'ADMIN'
-              ? data.filter((n: Notification) => n.type === 'pending_approval')
-              : [];
-
-            const loginToasts = [...deadlineNotifications, ...pendingApprovalNotifications];
-            loginToasts.forEach((n: Notification, index: number) => {
-              setTimeout(() => {
-                const toastNotification: ToastNotification = { ...n, isExiting: false };
-                setToasts((prev) => [...prev, toastNotification]);
-                playNotificationSound();
-                setTimeout(() => {
-                  setToasts((prev) => prev.map((t) => (t.id === n.id ? { ...t, isExiting: true } : t)));
-                  setTimeout(() => {
-                    setToasts((prev) => prev.filter((t) => t.id !== n.id));
-                  }, 300);
-                }, 10000);
-              }, index * 800);
-            });
-
-            sessionStorage.setItem('hasShownDeadlineToasts', 'true');
-            hasShownLoginDeadlineToasts.current = true;
-          }
-
-          data.forEach((n: Notification) => {
-            previousNotificationIdsRef.current.add(n.id);
-            shownToastIdsRef.current.add(n.id);
-          });
-        }
-
-        setNotifications(data);
-        data.forEach((n: Notification) => {
-          previousNotificationIdsRef.current.add(n.id);
+            }, 10000);
+          }, index * 800);
         });
-        isInitialLoad.current = false;
+
+        sessionStorage.setItem('hasShownDeadlineToasts', 'true');
+        hasShownLoginDeadlineToasts.current = true;
       }
-    } catch { /* silently ignore fetch errors */ }
+
+      data.forEach((n: Notification) => {
+        previousNotificationIdsRef.current.add(n.id);
+        shownToastIdsRef.current.add(n.id);
+      });
+    }
+
+    setNotifications(data);
+    data.forEach((n: Notification) => {
+      previousNotificationIdsRef.current.add(n.id);
+    });
+    isInitialLoad.current = false;
   }, [playNotificationSound]);
 
   const checkDeadlines = useCallback(async () => {
@@ -382,30 +371,66 @@ export default function NotificationDropdown() {
     } catch { /* silently ignore */ }
   }, []);
 
+  // SSE connection — replaces 5s polling with a persistent stream
   useEffect(() => {
-    const initializeNotifications = async () => {
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let mounted = true;
+
+    const connect = (userId: string) => {
+      if (!mounted) return;
+      eventSource?.close();
+      eventSource = new EventSource(`/api/notifications/stream?userId=${encodeURIComponent(userId)}`);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as Notification[];
+          processNotificationData(data);
+        } catch { /* ignore parse errors */ }
+      };
+
+      eventSource.onerror = () => {
+        eventSource?.close();
+        if (mounted) {
+          // Reconnect after 5 seconds on error
+          reconnectTimer = setTimeout(() => connect(userId), 5000);
+        }
+      };
+    };
+
+    const init = async () => {
       let retries = 0;
       while (!getUserId() && retries < 5) {
         await new Promise(resolve => setTimeout(resolve, 500));
         retries++;
       }
-      if (getUserId()) {
+      if (!mounted) return;
+      const userId = getUserId();
+      if (userId) {
         await checkDeadlines();
         await checkPendingApprovals();
-        await fetchNotifications();
+        connect(userId);
       }
     };
 
-    initializeNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
+    init();
+
+    return () => {
+      mounted = false;
+      eventSource?.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+    };
+  }, [checkDeadlines, checkPendingApprovals, processNotificationData]);
+
+  // Deadline and pending-approval checks every 5 minutes (unchanged)
+  useEffect(() => {
     const deadlineInterval = setInterval(checkDeadlines, 5 * 60 * 1000);
     const pendingApprovalInterval = setInterval(checkPendingApprovals, 5 * 60 * 1000);
     return () => {
-      clearInterval(interval);
       clearInterval(deadlineInterval);
       clearInterval(pendingApprovalInterval);
     };
-  }, [fetchNotifications, checkDeadlines, checkPendingApprovals]);
+  }, [checkDeadlines, checkPendingApprovals]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -427,24 +452,39 @@ export default function NotificationDropdown() {
     } catch { /* silently fail */ }
   };
 
+  // Batch mark multiple notifications as read in a single request
+  const markBatchAsReadApi = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': getUserId() || '',
+        },
+        body: JSON.stringify({ ids }),
+      });
+    } catch { /* silently fail */ }
+  }, []);
+
   const handleToggleDropdown = () => {
     const newIsOpen = !isOpen;
     setIsOpen(newIsOpen);
     if (newIsOpen) {
-      const unreadNotifications = notifications.filter((n) => !n.read);
-      unreadNotifications.forEach((n) => markAsReadApi(n.id));
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+      if (unreadIds.length > 0) {
+        markBatchAsReadApi(unreadIds);
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      }
     }
   };
 
-  const markAsRead = (id: string) => {
-    markAsReadApi(id);
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  };
-
   const markAllAsRead = () => {
-    notifications.filter((n) => !n.read).forEach((n) => markAsReadApi(n.id));
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length > 0) {
+      markBatchAsReadApi(unreadIds);
+      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    }
   };
 
   const handleNotificationClick = useCallback((notification: Notification) => {
@@ -606,9 +646,6 @@ export default function NotificationDropdown() {
       </div>
     );
   };
-
-  // Suppress unused variable warning
-  void markAsRead;
 
   return (
     <>

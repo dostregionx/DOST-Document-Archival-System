@@ -88,12 +88,21 @@ export default function Sidebar({ activePath, items }: SidebarProps) {
 
     fetchPermissions();
 
+    // Listen for permission changes broadcast by Header (no independent polling needed)
+    const handlePermissionsUpdated = (e: CustomEvent) => {
+      const updated = e.detail as UserPermissions;
+      setPermissions(updated);
+      // Keep userRole in sync for display logic
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try { setUserRole(JSON.parse(stored)?.role || null); } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('permissionsUpdated', handlePermissionsUpdated as EventListener);
 
-    // Poll for permission changes every 3 seconds
-    const pollInterval = setInterval(fetchPermissions, 3000);
-
-
-    return () => clearInterval(pollInterval);
+    return () => {
+      window.removeEventListener('permissionsUpdated', handlePermissionsUpdated as EventListener);
+    };
   }, []);
 
 

@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOST Document Archival System — Technical Documentation</title>
+<style>
+  /* ── Fonts ── */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ── CSS Variables ── */
+  :root {
+    --primary: #146184;
+    --accent:  #00AEEF;
+    --accent2: #7c3aed;
+    --bg:      #f8fafc;
+    --card:    #ffffff;
+    --border:  #e2e8f0;
+    --text:    #1e293b;
+    --muted:   #64748b;
+    --code-bg: #1a2233;
+    --code-fg: #7dd3fc;
+  }
+
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Base ── */
+  html { font-size: 14px; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── Cover Page ── */
+  .cover {
+    background: linear-gradient(135deg, var(--primary) 0%, #0e4a66 50%, var(--accent2) 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    page-break-after: always;
+  }
+  .cover-seal {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 3px solid rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 32px;
+    font-size: 56px;
+  }
+  .cover-org {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 8px;
+  }
+  .cover-subtitle-line {
+    font-size: 12px;
+    opacity: 0.65;
+    margin-bottom: 28px;
+  }
+  .cover h1 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+  .cover-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 48px;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .cover-meta-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px 12px;
+  }
+  .cover-meta-item .label { font-size: 10px; opacity: 0.65; text-transform: uppercase; letter-spacing: 1px; }
+  .cover-meta-item .value { font-size: 13px; font-weight: 700; margin-top: 4px; }
+  .cover-footer {
+    margin-top: 60px;
+    font-size: 11px;
+    opacity: 0.5;
+  }
+
+  /* ── TOC Page ── */
+  .toc-page {
+    background: white;
+    page-break-after: always;
+    padding: 60px 60px;
+  }
+  .toc-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .toc-list { list-style: none; }
+  .toc-list li {
+    display: flex;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dotted #e2e8f0;
+    font-size: 13px;
+  }
+  .toc-list li .num {
+    min-width: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .toc-list li .title { flex: 1; color: var(--text); font-weight: 500; }
+  .toc-list li .page {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+  }
+  .toc-section-head {
+    margin-top: 20px;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Content wrapper ── */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 60px 80px;
+  }
+
+  /* ── Section header ── */
+  .section {
+    page-break-inside: avoid;
+    margin-bottom: 48px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, #1a7aa8 100%);
+    border-radius: 12px;
+    color: white;
+    page-break-after: avoid;
+  }
+  .section-num {
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .section-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 28px 0 12px;
+    padding-left: 12px;
+    border-left: 3px solid var(--accent);
+  }
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 20px 0 8px;
+  }
+
+  p { margin-bottom: 12px; font-size: 13px; color: #334155; }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { background: linear-gradient(135deg, var(--primary), #1a7aa8); color: white; }
+  thead th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; letter-spacing: 0.3px; }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody td { padding: 9px 14px; color: #334155; vertical-align: top; }
+  tbody td:first-child { font-weight: 500; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--code-bg);
+    border-radius: 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  pre code { color: var(--code-fg); background: none; padding: 0; }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: #f1f5f9;
+    color: #0f766e;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* ── Badge / Tags ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red   { background: #fee2e2; color: #b91c1c; }
+  .badge-amber { background: #fef3c7; color: #b45309; }
+  .badge-purple{ background: #ede9fe; color: #6d28d9; }
+  .badge-cyan  { background: #cffafe; color: #0e7490; }
+
+  /* ── Info / note boxes ── */
+  .note {
+    background: #eff6ff;
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 12px;
+    color: #1e40af;
+  }
+  .warn {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 12px;
+    color: #92400e;
+  }
+
+  /* ── Architecture diagram ── */
+  .arch-box {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    background: white;
+  }
+  .arch-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .arch-layer {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .arch-arrow {
+    font-size: 20px;
+    color: var(--muted);
+    font-weight: bold;
+  }
+  .arch-client  { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .arch-server  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .arch-db-cloud{ background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+  .arch-db-local{ background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+
+  /* ── Workflow steps ── */
+  .steps { list-style: none; margin: 12px 0 20px; }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+  }
+  .step-num {
+    min-width: 24px;
+    height: 24px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Status lifecycle ── */
+  .lifecycle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+  .lc-step {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+  }
+  .lc-step.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .lc-arrow { color: var(--muted); font-weight: bold; font-size: 16px; }
+
+  /* ── Grid layout for feature cards ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .feature-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .feature-card h4 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feature-card p { font-size: 11.5px; color: var(--muted); margin: 0; }
+  .feature-icon { font-size: 16px; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; margin: 10px 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    margin-bottom: 6px;
+    color: #334155;
+  }
+  .checklist li::before {
+    content: '☐';
+    font-size: 14px;
+    line-height: 1;
+    margin-top: 1px;
+    color: var(--accent);
+  }
+
+  /* ── Print button (hidden in print) ── */
+  .print-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(20,97,132,0.4);
+    z-index: 999;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .print-btn:hover { background: #0e4a66; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(20,97,132,0.5); }
+  .print-btn svg { width: 16px; height: 16px; }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* ── Print styles ── */
+  @media print {
+    .print-btn { display: none !important; }
+    body { background: white; font-size: 12px; }
+    .cover { min-height: auto; padding: 80px 60px; }
+    .toc-page { padding: 60px; }
+    .content { padding: 30px 60px; }
+    .section { page-break-inside: avoid; }
+    .section-header { background: #146184 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    thead tr { background: #146184 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { background: #1a2233 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h3 { page-break-after: avoid; }
+    .table-wrap { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; }
+    a { text-decoration: none; color: inherit; }
+    @page {
+      size: A4;
+      margin: 15mm 20mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  COVER PAGE                                               -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-seal">🏛️</div>
+  <div class="cover-org">Republic of the Philippines</div>
+  <div class="cover-subtitle-line">Department of Science and Technology</div>
+  <div class="cover-subtitle-line" style="margin-bottom:20px">Provincial Science and Technology Office in Misamis Oriental</div>
+  <h1>Document Archival<br>System</h1>
+  <div class="cover-tag">TECHNICAL DOCUMENTATION</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Version</div>
+      <div class="value">0.1.0</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Framework</div>
+      <div class="value">Next.js 16.1.6</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Date</div>
+      <div class="value">April 2026</div>
+    </div>
+  </div>
+  <div class="cover-footer">DOST – Misamis Oriental &nbsp;·&nbsp; Confidential Internal Document</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TABLE OF CONTENTS                                        -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="toc-page">
+  <div class="toc-title">Table of Contents</div>
+  <div class="toc-section-head">Overview & Setup</div>
+  <ul class="toc-list">
+    <li><span class="num">1.</span><span class="title">Project Overview</span></li>
+    <li><span class="num">2.</span><span class="title">System Architecture</span></li>
+    <li><span class="num">3.</span><span class="title">Installation &amp; Setup</span></li>
+    <li><span class="num">4.</span><span class="title">Project Structure</span></li>
+  </ul>
+  <div class="toc-section-head">Features & Navigation</div>
+  <ul class="toc-list">
+    <li><span class="num">5.</span><span class="title">Features</span></li>
+    <li><span class="num">6.</span><span class="title">Page Routes</span></li>
+  </ul>
+  <div class="toc-section-head">API & Data</div>
+  <ul class="toc-list">
+    <li><span class="num">7.</span><span class="title">API Reference</span></li>
+    <li><span class="num">8.</span><span class="title">Database Schema</span></li>
+  </ul>
+  <div class="toc-section-head">Components & Systems</div>
+  <ul class="toc-list">
+    <li><span class="num">9.</span><span class="title">Components Reference</span></li>
+    <li><span class="num">10.</span><span class="title">Authentication &amp; Authorization</span></li>
+    <li><span class="num">11.</span><span class="title">Notification System</span></li>
+    <li><span class="num">12.</span><span class="title">Database Configuration</span></li>
+    <li><span class="num">13.</span><span class="title">File &amp; Document Management</span></li>
+    <li><span class="num">14.</span><span class="title">Maps &amp; Geolocation</span></li>
+    <li><span class="num">15.</span><span class="title">Messaging System</span></li>
+  </ul>
+  <div class="toc-section-head">Configuration & Deployment</div>
+  <ul class="toc-list">
+    <li><span class="num">16.</span><span class="title">Configuration Files</span></li>
+    <li><span class="num">17.</span><span class="title">Environment Variables</span></li>
+    <li><span class="num">18.</span><span class="title">Development Guide</span></li>
+    <li><span class="num">19.</span><span class="title">Deployment</span></li>
+    <li><span class="num">20.</span><span class="title">Troubleshooting</span></li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  MAIN CONTENT                                             -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="content">
+
+<!-- ─────────────────── SECTION 1 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Project Overview</h2>
+  </div>
+  <p>The <strong>DOST Document Archival System</strong> is a full-stack web application built for the Department of Science and Technology – Misamis Oriental Provincial Office. It centralizes project management, document archiving, user administration, and geographic visualization for two primary DOST programs.</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="feature-icon">📋</span> SETUP Program</h4>
+      <p>Small Enterprise Technology Upgrading Program. Tracks firm-level technology assistance projects from proposal through graduation.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">🌿</span> CEST Program</h4>
+      <p>Community Empowerment through Science and Technology. Manages community-level projects with multi-phase document workflows.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">🗂️</span> Document Archival</h4>
+      <p>Phase-based document upload, download, and QR tracking for physical-to-digital linking.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">👥</span> User Administration</h4>
+      <p>Role-based access control, approval workflows, and granular permission management per module.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">🗺️</span> Geographic Mapping</h4>
+      <p>Leaflet-based interactive map showing all project locations with program-based filtering.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">🔔</span> Smart Notifications</h4>
+      <p>Automated deadline alerts, approval reminders, and birthday popups with login-time toast bursts.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">💬</span> Messaging</h4>
+      <p>Internal real-time chat between staff with user mentions and read receipts.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="feature-icon">🗄️</span> Multi-Database</h4>
+      <p>Seamless runtime switching between CockroachDB (cloud) and PostgreSQL (local) with one-click sync.</p>
+    </div>
+  </div>
+
+  <h3>Technology Stack</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend Framework</td><td>Next.js (App Router, Turbopack)</td><td>16.1.6</td></tr>
+        <tr><td>UI Library</td><td>React</td><td>19.2.4</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS + LightningCSS</td><td>4.1.18</td></tr>
+        <tr><td>Database ORM</td><td>Prisma</td><td>7.4.0</td></tr>
+        <tr><td>Cloud Database</td><td>CockroachDB (PostgreSQL-compatible)</td><td>—</td></tr>
+        <tr><td>Local Database</td><td>PostgreSQL</td><td>14+</td></tr>
+        <tr><td>Authentication</td><td>JWT cookies (bcryptjs)</td><td>—</td></tr>
+        <tr><td>Maps</td><td>Leaflet + react-leaflet</td><td>1.9.4 / 5.0.0</td></tr>
+        <tr><td>Icons</td><td>@iconify/react + lucide-react</td><td>—</td></tr>
+        <tr><td>Email</td><td>Nodemailer (Gmail SMTP)</td><td>—</td></tr>
+        <tr><td>Language</td><td>TypeScript</td><td>5</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 2 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>System Architecture</h2>
+  </div>
+
+  <div class="arch-box">
+    <div class="arch-row">
+      <div class="arch-layer arch-client">
+        🌐 Client (Browser)<br>
+        <span style="font-weight:400;font-size:11px">React 19 + Leaflet + Tailwind</span>
+      </div>
+    </div>
+    <div class="arch-row"><span class="arch-arrow">↕ HTTP / fetch</span></div>
+    <div class="arch-row">
+      <div class="arch-layer arch-server" style="min-width:300px">
+        ⚙️ Next.js Server (Node.js)<br>
+        <span style="font-weight:400;font-size:11px">App Router API Routes &nbsp;·&nbsp; proxy.ts middleware &nbsp;·&nbsp; lib/prisma.ts Proxy</span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-arrow">↙</span>
+      <span style="font-size:12px;color:var(--muted)">reads db-config.json</span>
+      <span class="arch-arrow">↘</span>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer arch-db-cloud">
+        ☁️ CockroachDB (Cloud)<br>
+        <span style="font-weight:400;font-size:11px">agile-vulture · aws-us-east-1</span>
+      </div>
+      <div style="font-size:20px;color:var(--muted)">⇄</div>
+      <div class="arch-layer arch-db-local">
+        🖥️ PostgreSQL (Local)<br>
+        <span style="font-weight:400;font-size:11px">localhost:5432 · dost_db</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">The application dynamically switches between cloud and local databases at runtime by reading <code>db-config.json</code> on every Prisma call. No server restart is required when switching.</div>
+</div>
+
+<!-- ─────────────────── SECTION 3 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Installation &amp; Setup</h2>
+  </div>
+
+  <h3>Prerequisites</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Requirement</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Node.js</td><td>Version 20+ — Windows native (not WSL Node)</td></tr>
+        <tr><td>PostgreSQL</td><td>Version 14+ for local database</td></tr>
+        <tr><td>Git</td><td>For cloning the repository</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Step-by-Step Setup</h3>
+  <ol class="steps">
+    <li><span class="step-num">1</span><div><strong>Clone the repository</strong><br><pre><code>git clone &lt;repository-url&gt;
+cd DOST-Document-Archival-System</code></pre></div></li>
+    <li><span class="step-num">2</span><div><strong>Install dependencies</strong><br><pre><code>npm install</code></pre><div class="note" style="margin-top:8px">The post-install script automatically downloads Windows-native LightningCSS binaries for WSL2 compatibility.</div></div></li>
+    <li><span class="step-num">3</span><div><strong>Create <code>.env</code> file</strong> at the project root:<br><pre><code>DATABASE_URL="postgresql://user:pass@host:26257/defaultdb?sslmode=verify-full"
+LOCAL_DATABASE_URL="postgresql://postgres:pass@localhost:5432/dost_db"
+JWT_SECRET="your-long-random-secret"
+EMAIL_USER="dostxmisamisoriental@gmail.com"
+EMAIL_PASSWORD="your-gmail-app-password"</code></pre></div></li>
+    <li><span class="step-num">4</span><div><strong>Initialize the database</strong><br><pre><code># Cloud (CockroachDB):
+npx prisma migrate deploy
+
+# Local (PostgreSQL) — first-time:
+npx prisma db push --config prisma.local.config.ts</code></pre></div></li>
+    <li><span class="step-num">5</span><div><strong>Generate Prisma client</strong><br><pre><code>npx prisma generate</code></pre></div></li>
+    <li><span class="step-num">6</span><div><strong>Start the development server</strong><br><pre><code>npm run dev</code></pre>Available at <code>http://localhost:3000</code></div></li>
+  </ol>
+</div>
+
+<!-- ─────────────────── SECTION 4 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Project Structure</h2>
+  </div>
+  <pre><code>DOST-Document-Archival-System/
+├── app/
+│   ├── api/                    # API route handlers (Next.js Route Handlers)
+│   │   ├── address/            # Philippine geographic hierarchy
+│   │   ├── archival/           # Archival records CRUD
+│   │   ├── auth/               # Login, signup, logout, OTP reset
+│   │   ├── calendar-events/    # Calendar CRUD
+│   │   ├── cest-projects/      # CEST project CRUD + documents
+│   │   ├── conversations/      # Messaging system
+│   │   ├── db-config/          # Database switching
+│   │   ├── db-sync/            # Cloud ↔ Local data sync
+│   │   ├── local-ip/           # LAN IP for QR codes (WSL2-aware)
+│   │   ├── map-pins/           # Map pin CRUD
+│   │   ├── notifications/      # Notification system
+│   │   ├── setup-projects/     # SETUP project CRUD + documents
+│   │   ├── time-records/       # Attendance records
+│   │   ├── user-logs/          # Activity audit logs
+│   │   ├── user-permissions/   # Permission management
+│   │   ├── users/              # User CRUD
+│   │   └── view-doc/           # Public document viewer endpoint
+│   ├── components/             # Shared React components
+│   ├── cest/                   # CEST pages ([id] detail)
+│   ├── dashboard/              # Main dashboard page
+│   ├── forgot-password/        # OTP password reset
+│   ├── maps/                   # Interactive map page
+│   ├── profile/                # Profile + admin management page
+│   ├── recent-activity/        # Login/logout history
+│   ├── settings/               # Admin database settings
+│   ├── setup/                  # SETUP pages ([id] detail)
+│   ├── signup/                 # User registration
+│   ├── view-doc/               # Public document viewer page
+│   ├── layout.tsx              # Root layout (fonts, providers)
+│   └── page.tsx                # Login page (/)
+├── lib/
+│   ├── prisma.ts               # Dual-DB Prisma client (runtime proxy)
+│   ├── activity-log.ts         # Logging utilities + getUserIdFromRequest
+│   ├── api-client.ts           # Frontend fetch wrapper (auto x-user-id)
+│   └── email.ts                # Nodemailer Gmail SMTP
+├── prisma/
+│   ├── schema.prisma           # Cloud DB schema (CockroachDB)
+│   ├── schema.local.prisma     # Local DB schema (PostgreSQL)
+│   └── migrations/             # Migration history
+├── public/                     # Static assets (logos, images)
+├── scripts/                    # Build and utility scripts
+├── db-config.json              # Runtime database selection
+├── proxy.ts                    # Auth middleware (renamed from middleware.ts)
+├── next.config.mjs             # Next.js configuration
+└── package.json</code></pre>
+</div>
+
+<!-- ─────────────────── SECTION 5 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Features</h2>
+  </div>
+
+  <h3>5.1 SETUP Project Management</h3>
+  <p>Tracks firm-level projects from initial proposal through graduation. Each project records firm details, assigned staff, funding information, and multi-phase documents.</p>
+  <div style="margin:12px 0 20px">
+    <strong style="font-size:12px;color:var(--muted)">Project Lifecycle:</strong>
+    <div class="lifecycle" style="margin-top:8px">
+      <div class="lc-step">PROPOSAL</div><div class="lc-arrow">→</div>
+      <div class="lc-step">APPROVED</div><div class="lc-arrow">→</div>
+      <div class="lc-step">ONGOING</div><div class="lc-arrow">→</div>
+      <div class="lc-step">EVALUATED</div><div class="lc-arrow">→</div>
+      <div class="lc-step active">GRADUATED</div>
+    </div>
+    <div class="lifecycle" style="margin-top:6px">
+      <div style="width:100%;display:flex;gap:6px;padding-left:230px;align-items:center">
+        <div class="lc-arrow">↘</div>
+        <div class="lc-step" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5">WITHDRAWN</div>
+        <span style="color:var(--muted);font-size:12px">or</span>
+        <div class="lc-step" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5">TERMINATED</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>5.2 CEST Project Management</h3>
+  <p>Manages community-level projects with multi-stakeholder tracking: partner LGUs, beneficiaries, funding sources, and counterpart contributions.</p>
+
+  <h3>5.3 Document Archival</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Phase</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">INITIATION</span></td><td>Project startup documents and approvals</td></tr>
+        <tr><td><span class="badge badge-amber">IMPLEMENTATION</span></td><td>Ongoing project activity documents</td></tr>
+        <tr><td><span class="badge badge-green">MONITORING</span></td><td>Evaluation reports and monitoring records</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Documents are stored as binary data in the database. Each document can be assigned a <strong>QR pin</strong> linking a physical document to its digital record via the public <code>/view-doc/[docId]</code> URL.</p>
+
+  <h3>5.4 User Management (Admin)</h3>
+  <ul class="checklist">
+    <li>Approve or reject new user registrations</li>
+    <li>Block or unblock accounts</li>
+    <li>Set per-module permissions (SETUP, CEST, Maps, Calendar, Archival, User Management)</li>
+    <li>View login/logout history per user</li>
+    <li>Transfer project ownership when removing staff</li>
+  </ul>
+
+  <h3>5.5 Additional Features</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>📅 Calendar &amp; Events</h4>
+      <p>Event scheduling with staff assignment, priority levels, and personnel notifications.</p>
+    </div>
+    <div class="feature-card">
+      <h4>🗺️ Geographic Maps</h4>
+      <p>Leaflet map with pins color-coded by program. Filter by district or program type.</p>
+    </div>
+    <div class="feature-card">
+      <h4>⏱️ Time Tracking</h4>
+      <p>AM/PM attendance records per staff member with daily time-in/time-out tracking.</p>
+    </div>
+    <div class="feature-card">
+      <h4>📊 Activity Audit</h4>
+      <p>Complete log of all user actions with timestamp, resource type, and action type.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 6 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Page Routes</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Route</th><th>Access</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td><span class="badge badge-green">Public</span></td><td>Login page</td></tr>
+        <tr><td><code>/signup</code></td><td><span class="badge badge-green">Public</span></td><td>New user registration</td></tr>
+        <tr><td><code>/forgot-password</code></td><td><span class="badge badge-green">Public</span></td><td>OTP-based password reset</td></tr>
+        <tr><td><code>/view-doc/[docId]</code></td><td><span class="badge badge-green">Public</span></td><td>Shareable document viewer</td></tr>
+        <tr><td><code>/dashboard</code></td><td><span class="badge badge-blue">Auth</span></td><td>Project overview and statistics</td></tr>
+        <tr><td><code>/setup</code></td><td><span class="badge badge-amber">Permission</span></td><td>SETUP projects list and management</td></tr>
+        <tr><td><code>/setup/[id]</code></td><td><span class="badge badge-amber">Permission</span></td><td>Individual SETUP project details and documents</td></tr>
+        <tr><td><code>/cest</code></td><td><span class="badge badge-amber">Permission</span></td><td>CEST projects list and management</td></tr>
+        <tr><td><code>/cest/[id]</code></td><td><span class="badge badge-amber">Permission</span></td><td>Individual CEST project details and documents</td></tr>
+        <tr><td><code>/maps</code></td><td><span class="badge badge-amber">Permission</span></td><td>Interactive project map with pins</td></tr>
+        <tr><td><code>/recent-activity</code></td><td><span class="badge badge-blue">Auth</span></td><td>Personal login/logout history</td></tr>
+        <tr><td><code>/profile</code></td><td><span class="badge badge-blue">Auth</span></td><td>Account settings + admin management panels</td></tr>
+        <tr><td><code>/settings</code></td><td><span class="badge badge-red">Admin</span></td><td>Database configuration (switch / sync)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 7 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>API Reference</h2>
+  </div>
+  <div class="note">All authenticated endpoints require the <code>x-user-id</code> header, automatically injected by <code>lib/api-client.ts</code>.</div>
+
+  <h3>7.1 Authentication</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/login</code></td><td>Authenticate user, set auth-token cookie</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/signup</code></td><td>Register new user (pending approval)</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/logout</code></td><td>Clear auth-token cookie</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/auth/check-email</code></td><td>Check if email is already registered</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/forgot-password</code></td><td>Send OTP to email</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/verify-otp</code></td><td>Verify OTP code</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/reset-password</code></td><td>Reset password with verified OTP</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.2 Users</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/users</code></td><td>List all users (admin only)</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/users/[id]</code></td><td>Get user by ID</td></tr>
+        <tr><td><span class="badge badge-amber">PATCH</span></td><td><code>/api/users/[id]</code></td><td>Update user fields</td></tr>
+        <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/users/[id]</code></td><td>Delete user account</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/users/birthdays</code></td><td>Get users with today's birthday</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.3 SETUP Projects</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/setup-projects</code></td><td>List projects (filter: status, search, assignee)</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/setup-projects</code></td><td>Create new SETUP project</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/setup-projects/[id]</code></td><td>Get full project details</td></tr>
+        <tr><td><span class="badge badge-amber">PATCH</span></td><td><code>/api/setup-projects/[id]</code></td><td>Update project fields</td></tr>
+        <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/setup-projects/[id]</code></td><td>Delete project and all documents</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/setup-projects/[id]/documents</code></td><td>List project documents</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/setup-projects/[id]/documents</code></td><td>Upload a document</td></tr>
+        <tr><td><span class="badge badge-amber">PATCH</span></td><td><code>/api/setup-projects/[id]/documents/[docId]</code></td><td>Update document metadata</td></tr>
+        <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/setup-projects/[id]/documents/[docId]</code></td><td>Delete document</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/setup-projects/[id]/documents/[docId]/download</code></td><td>Download document binary</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/setup-projects/import</code></td><td>Bulk import from JSON array</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/setup-projects/geocode-batch</code></td><td>Batch geocode project coordinates</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.4 Notifications</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/notifications</code></td><td>Get all notifications for current user</td></tr>
+        <tr><td><span class="badge badge-amber">PATCH</span></td><td><code>/api/notifications/[id]</code></td><td>Mark notification as read</td></tr>
+        <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/notifications/[id]</code></td><td>Delete notification</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/notifications/deadline-check</code></td><td>Generate/return deadline notifications</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/notifications/pending-approvals</code></td><td>Admin: pending user approvals count</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Deadline Urgency Levels</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Days Remaining</th><th>Status</th><th>Shown in UI</th></tr></thead>
+      <tbody>
+        <tr><td>≤ 0</td><td><span class="badge badge-red">DEADLINE REACHED</span></td><td>Yes</td></tr>
+        <tr><td>1 – 30</td><td><span class="badge badge-red">URGENT</span></td><td>Yes</td></tr>
+        <tr><td>31 – 90</td><td><span class="badge badge-amber">Due Soon</span></td><td>Yes</td></tr>
+        <tr><td>91 – 180</td><td><span class="badge badge-amber">Approaching</span></td><td>Yes</td></tr>
+        <tr><td>181 – 365</td><td><span class="badge badge-green">On Track</span></td><td>Yes</td></tr>
+        <tr><td>&gt; 365</td><td>—</td><td>No</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.5 Database Configuration</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/db-config</code></td><td>Get current DB selection and last sync info</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/db-config</code></td><td>Switch active database (takes effect immediately)</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/db-sync</code></td><td>Sync all data between cloud and local</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.6 Other Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/local-ip</code></td><td>Returns Windows LAN IP (WSL2-aware, for QR codes)</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/view-doc/[docId]</code></td><td>Public: document metadata and binary</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/time-records</code></td><td>Get attendance records (filter: userId, date)</td></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/time-records</code></td><td>Create/update time record</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/address/provinces</code></td><td>All Philippine provinces</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/address/municipalities</code></td><td>Municipalities by province ID</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/address/barangays</code></td><td>Barangays by municipality ID</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 8 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Database Schema</h2>
+  </div>
+
+  <h3>8.1 Enumerations</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Enum</th><th>Values</th></tr></thead>
+      <tbody>
+        <tr><td><code>Role</code></td><td>ADMIN, STAFF</td></tr>
+        <tr><td><code>SetupStatus</code></td><td>PROPOSAL, APPROVED, ONGOING, WITHDRAWN, TERMINATED, EVALUATED, GRADUATED</td></tr>
+        <tr><td><code>DocumentPhase</code></td><td>INITIATION, IMPLEMENTATION, MONITORING</td></tr>
+        <tr><td><code>MapProgram</code></td><td>SETUP, CEST, SSCP, LGIA</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.2 Core Models</h3>
+
+  <div class="card">
+    <div class="card-title">User</div>
+    <pre><code>id               UUID (PK)
+email            String (unique)
+passwordHash     String
+fullName         String
+role             Role (default: STAFF)
+birthday         DateTime?
+contactNo        String?
+profileImageUrl  String?
+isApproved       Boolean (default: false)
+isBlocked        Boolean (default: false)
+resetOtp         String?
+resetOtpExpiresAt DateTime?
+createdAt        DateTime
+updatedAt        DateTime</code></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">SetupProject</div>
+    <pre><code>id               UUID (PK)
+code             String (unique)
+title            String
+firm             String
+typeOfFirm       String
+address          String
+coordinates      String?
+corporatorName   String
+contactNumbers   String[]
+emails           String[]
+status           SetupStatus
+prioritySector   String
+firmSize         String
+fund             String
+typeOfFund       String
+assignee         String
+assigneeProfileUrl String?
+companyLogoUrl   String?
+year             Int
+dropdownData     Json?       // fund release dates, PDE rows, etc.
+documents        ProjectDocument[]</code></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">CestProject</div>
+    <pre><code>id                      UUID (PK)
+code                    String? (unique)
+projectTitle            String
+location                String
+coordinates             String?
+beneficiaries           String
+typeOfBeneficiary       String
+programFunding          String
+status                  String
+approvedAmount          Float?
+releasedAmount          Float?
+counterpartAmount       Float?
+projectDuration         String
+staffAssigned           String
+year                    Int
+dateOfApproval          String?
+companyLogoUrl          String?
+partnerLGUs, categories, emails, contactNumbers  Json?
+dropdownData            Json?
+documents               CestProjectDocument[]</code></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ProjectDocument / CestProjectDocument</div>
+    <pre><code>id              UUID (PK)
+projectId       String (FK)
+phase           DocumentPhase
+templateItemId  String
+fileName        String
+fileUrl         String?
+fileData        Bytes?      // binary file content
+mimeType        String (default: 'application/octet-stream')
+qrPin           String?     // short code for QR scanning</code></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Notification</div>
+    <pre><code>id                 UUID (PK)
+userId             String (FK → User)
+type               String   // 'deadline' | 'pending_approval' | 'general'
+title              String
+message            String
+eventId            String?  // projectId for deadline notifications
+read               Boolean (default: false)
+bookedByUserId     String?
+bookedByName       String?
+bookedByProfileUrl String?
+createdAt          DateTime</code></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Conversation + Message</div>
+    <pre><code>Conversation:
+  id        UUID (PK)
+  name      String?
+  isGroup   Boolean (default: false)
+  createdAt DateTime
+
+Message:
+  id             UUID (PK)
+  conversationId String (FK)
+  senderId       String (FK → User)
+  content        String
+  createdAt      DateTime</code></pre>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 9 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Components Reference</h2>
+  </div>
+
+  <h3>Layout Components</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>File</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>DashboardLayout</code></td><td>components/DashboardLayout.tsx</td><td>Wraps all authenticated pages. Renders Sidebar + Header + content.</td></tr>
+        <tr><td><code>Sidebar</code></td><td>components/Sidebar.tsx</td><td>Left nav bar. Permission-aware menu items. Hides inaccessible sections.</td></tr>
+        <tr><td><code>Header</code></td><td>components/Header.tsx</td><td>Top bar: DOST logo, maps link, messenger, notifications, profile dropdown. Polls user data every 3s.</td></tr>
+        <tr><td><code>AuthLayout</code></td><td>components/AuthLayout.tsx</td><td>Wrapper for public pages (login, signup, password reset).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Functional Components</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>NotificationDropdown</code></td><td>Bell icon in header. Polls notifications (5s), deadlines (5min), approvals (5min). Login toast burst on first session load.</td></tr>
+        <tr><td><code>BirthdayPopup</code></td><td>Modal shown once per session when logged-in user has birthday today.</td></tr>
+        <tr><td><code>MessengerDropdown</code></td><td>Chat icon in header. Opens inline message panel.</td></tr>
+        <tr><td><code>Messenger</code></td><td>Full messaging interface with conversation list and message thread.</td></tr>
+        <tr><td><code>UserMentionInput</code></td><td>Text input with @username autocomplete for tagging users in messages.</td></tr>
+        <tr><td><code>IconifySetup</code></td><td>Registers all icon sets locally (mdi, bi, game-icons, lets-icons). Prevents CDN fetches after cache clear.</td></tr>
+        <tr><td><code>LoadingProvider</code></td><td>Context provider for full-page loading indicator during navigation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 10 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>Authentication &amp; Authorization</h2>
+  </div>
+
+  <h3>10.1 Authentication Flow</h3>
+  <ol class="steps">
+    <li><span class="step-num">1</span>User submits email + password to <code>POST /api/auth/login</code></li>
+    <li><span class="step-num">2</span>Server verifies password with <strong>bcryptjs</strong></li>
+    <li><span class="step-num">3</span>On success: JWT signed with <code>JWT_SECRET</code>, set as HttpOnly cookie <code>auth-token</code></li>
+    <li><span class="step-num">4</span>User object stored in <code>localStorage</code> (id, role, fullName, profileImageUrl)</li>
+    <li><span class="step-num">5</span><code>proxy.ts</code> checks <code>auth-token</code> cookie on every request</li>
+    <li><span class="step-num">6</span>Unauthenticated access to protected route → redirect to <code>/</code></li>
+    <li><span class="step-num">7</span>Authenticated access to public route → redirect to <code>/dashboard</code></li>
+  </ol>
+
+  <h3>10.2 Role Permissions Matrix</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>ADMIN</th><th>STAFF</th></tr></thead>
+      <tbody>
+        <tr><td>SETUP Projects</td><td>✅ Full access</td><td>Permission-based</td></tr>
+        <tr><td>CEST Projects</td><td>✅ Full access</td><td>Permission-based</td></tr>
+        <tr><td>Maps</td><td>✅ Full access</td><td>Permission-based</td></tr>
+        <tr><td>Calendar</td><td>✅ Full access</td><td>Permission-based</td></tr>
+        <tr><td>Archival Records</td><td>✅ Full access</td><td>Permission-based</td></tr>
+        <tr><td>User Management</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Database Settings</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Pending Approvals</td><td>✅</td><td>❌</td></tr>
+        <tr><td>View all user logs</td><td>✅</td><td>❌ (own only)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.3 Account States</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>State</th><th>isApproved</th><th>isBlocked</th><th>Can Login</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-amber">Pending</span></td><td>false</td><td>false</td><td>❌</td></tr>
+        <tr><td><span class="badge badge-green">Active</span></td><td>true</td><td>false</td><td>✅</td></tr>
+        <tr><td><span class="badge badge-red">Blocked</span></td><td>true</td><td>true</td><td>❌</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 11 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2>Notification System</h2>
+  </div>
+
+  <h3>11.1 Notification Types</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Type</th><th>Trigger</th><th>Who Sees It</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-red">deadline</span></td><td>Project within 365 days of deadline</td><td>Assignee (staff) / All admins</td></tr>
+        <tr><td><span class="badge badge-green">pending_approval</span></td><td>Users with isApproved: false</td><td>Admins only</td></tr>
+        <tr><td><span class="badge badge-cyan">general</span></td><td>Manual or system events</td><td>Target user</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>11.2 Deadline Formula</h3>
+  <div class="card">
+    <pre><code>deadline       = fundReleaseDate + 12 months + Σ(PDE extension months)
+daysRemaining  = deadline − today</code></pre>
+    <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">Notifications are deduplicated: one per project per day using <code>eventId + date window</code>.</p>
+  </div>
+
+  <h3>11.3 Polling Schedule</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Check</th><th>Interval</th></tr></thead>
+      <tbody>
+        <tr><td>General notifications</td><td>Every 5 seconds</td></tr>
+        <tr><td>Deadline check</td><td>Every 5 minutes</td></tr>
+        <tr><td>Pending approvals</td><td>Every 5 minutes</td></tr>
+        <tr><td>Header user data</td><td>Every 3 seconds</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────── SECTION 12 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">12</span>
+    <h2>Database Configuration</h2>
+  </div>
+
+  <h3>12.1 Runtime Switching</h3>
+  <p>The application supports switching databases at runtime without restarting the server. <code>lib/prisma.ts</code> wraps two cached Prisma clients in a JavaScript <code>Proxy</code>:</p>
+  <pre><code>const prismaProxy = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getClient(getActiveDb()); // reads db-config.json on every call
+    const value = client[prop];
+    if (typeof value === 'function') return value.bind(client);
+    return value;
+  },
+});</code></pre>
+
+  <h3>12.2 db-config.json</h3>
+  <pre><code>{
+  "activeDb": "local",
+  "lastSync": "2026-04-26T20:00:59.143Z",
+  "lastSyncDirection": "local → cloud"
+}</code></pre>
+  <p>Written by <code>POST /api/db-config</code>. Read on every database property access.</p>
+
+  <h3>12.3 Data Sync</h3>
+  <p><code>POST /api/db-sync</code> copies all records from source to destination. It truncates destination tables and re-inserts all data. Synchronized models include: users, projects, documents, map pins, calendar events, archival records, conversations, messages, notifications, and address data.</p>
+  <div class="warn">⚠️ Sync is destructive on the destination — all existing data is replaced. Always verify source data before syncing.</div>
+</div>
+
+<!-- ─────────────────── SECTION 13 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <h2>File &amp; Document Management</h2>
+  </div>
+
+  <h3>13.1 Document Upload Flow</h3>
+  <ol class="steps">
+    <li><span class="step-num">1</span>User selects file in the browser</li>
+    <li><span class="step-num">2</span>File read as ArrayBuffer via FileReader API</li>
+    <li><span class="step-num">3</span>Converted to Base64 string</li>
+    <li><span class="step-num">4</span>POST to <code>/api/setup-projects/[id]/documents</code> with <code>{ fileName, fileData, mimeType, phase, templateItemId }</code></li>
+    <li><span class="step-num">5</span>Server stores as <code>Bytes</code> in <code>ProjectDocument.fileData</code></li>
+  </ol>
+
+  <h3>13.2 QR Pin Workflow</h3>
+  <ol class="steps">
+    <li><span class="step-num">1</span>Admin assigns a short <code>qrPin</code> code to a document</li>
+    <li><span class="step-num">2</span>QR code is generated encoding <code>http://&lt;LAN-IP&gt;:3000/view-doc/[docId]</code></li>
+    <li><span class="step-num">3</span>QR code is printed and attached to the physical document</li>
+    <li><span class="step-num">4</span>Scanning the QR opens the public document viewer with no login required</li>
+  </ol>
+  <div class="note">The LAN IP is fetched from <code>GET /api/local-ip</code>, which uses PowerShell on WSL2 to return the true Windows network IP.</div>
+</div>
+
+<!-- ─────────────────── SECTION 14 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">14</span>
+    <h2>Maps &amp; Geolocation</h2>
+  </div>
+  <p>The maps module uses <strong>Leaflet 1.9.4</strong> with OpenStreetMap tiles. Each project pin is stored as a <code>MapPin</code> record with latitude, longitude, label, district, and program type.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Program</th><th>Color</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">SETUP</span></td><td>Blue</td><td>Technology upgrading projects</td></tr>
+        <tr><td><span class="badge badge-green">CEST</span></td><td>Green</td><td>Community empowerment projects</td></tr>
+        <tr><td><span class="badge badge-amber">SSCP</span></td><td>Amber</td><td>SSCP program projects</td></tr>
+        <tr><td><span class="badge badge-purple">LGIA</span></td><td>Purple</td><td>LGIA program projects</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Pins can be filtered by <strong>district</strong> (1–5 for Misamis Oriental) and by <strong>program type</strong>. Batch geocoding updates coordinates for multiple projects at once.</p>
+</div>
+
+<!-- ─────────────────── SECTION 15 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">15</span>
+    <h2>Messaging System</h2>
+  </div>
+  <h3>Data Model</h3>
+  <pre><code>User ─── ConversationParticipant ─── Conversation ─── Message</code></pre>
+  <p>One conversation can have many participants (group or 1:1). Messages are ordered by <code>createdAt</code>. The <code>lastReadAt</code> field on <code>ConversationParticipant</code> tracks unread state per user.</p>
+
+  <h3>User Mention</h3>
+  <p>The <code>UserMentionInput</code> component detects <code>@</code> in message text and queries <code>/api/users</code> for matching names, showing an autocomplete dropdown.</p>
+</div>
+
+<!-- ─────────────────── SECTION 16 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">16</span>
+    <h2>Configuration Files</h2>
+  </div>
+
+  <h3>next.config.mjs</h3>
+  <pre><code>const nextConfig = {
+  devIndicators: false  // Hides the Next.js debug overlay
+};</code></pre>
+
+  <h3>proxy.ts — Auth Middleware</h3>
+  <p>Runs on every HTTP request. Checks <code>auth-token</code> cookie.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scenario</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>No cookie, accessing protected route</td><td>Redirect to <code>/</code></td></tr>
+        <tr><td>Valid cookie, accessing public route</td><td>Redirect to <code>/dashboard</code></td></tr>
+        <tr><td>API routes, static files, <code>/_next/*</code></td><td>Pass through (no check)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>postcss.config.mjs</h3>
+  <pre><code>export default { plugins: { "@tailwindcss/postcss": {} } };</code></pre>
+  <p>Uses Tailwind CSS v4's new PostCSS plugin (LightningCSS-based compilation).</p>
+</div>
+
+<!-- ─────────────────── SECTION 17 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">17</span>
+    <h2>Environment Variables</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Variable</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>DATABASE_URL</code></td><td><span class="badge badge-red">Required</span></td><td>CockroachDB connection string with SSL</td></tr>
+        <tr><td><code>LOCAL_DATABASE_URL</code></td><td><span class="badge badge-red">Required</span></td><td>Local PostgreSQL connection string</td></tr>
+        <tr><td><code>JWT_SECRET</code></td><td><span class="badge badge-red">Required</span></td><td>Long random string for signing auth tokens</td></tr>
+        <tr><td><code>EMAIL_USER</code></td><td><span class="badge badge-red">Required</span></td><td>Gmail address for sending OTP emails</td></tr>
+        <tr><td><code>EMAIL_PASSWORD</code></td><td><span class="badge badge-red">Required</span></td><td>Gmail app-specific password (not account password)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="warn">⚠️ Never commit <code>.env</code> to version control. Keep <code>JWT_SECRET</code> at least 32 characters long.</div>
+</div>
+
+<!-- ─────────────────── SECTION 18 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">18</span>
+    <h2>Development Guide</h2>
+  </div>
+
+  <h3>Running the Dev Server</h3>
+  <pre><code>npm run dev
+# Available at http://localhost:3000
+# LAN access: http://&lt;windows-ip&gt;:3000</code></pre>
+
+  <div class="warn">⚠️ <strong>WSL2:</strong> The dev server must run from Windows (PowerShell/CMD). WSL2 installs Linux binaries which are incompatible with Windows Node.js.</div>
+
+  <h3>Common Commands</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Task</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td>Start dev server</td><td><code>npm run dev</code></td></tr>
+        <tr><td>Build for production</td><td><code>npm run build</code></td></tr>
+        <tr><td>Clear build cache</td><td><code>rm -rf .next</code></td></tr>
+        <tr><td>Generate Prisma client</td><td><code>npx prisma generate</code></td></tr>
+        <tr><td>Push schema to local DB</td><td><code>npx prisma db push --config prisma.local.config.ts</code></td></tr>
+        <tr><td>Create migration</td><td><code>npx prisma migrate dev --name &lt;name&gt;</code></td></tr>
+        <tr><td>Open Prisma Studio</td><td><code>npx prisma studio</code></td></tr>
+        <tr><td>Fix WSL binaries</td><td><code>node scripts/fix-wsl-binaries.cjs</code></td></tr>
+        <tr><td>Seed database</td><td><code>npx tsx prisma/seed.ts</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Adding New Icon Sets</h3>
+  <pre><code># 1. Install the icon package
+npm install @iconify-json/&lt;set-name&gt;
+
+# 2. Register in app/components/IconifySetup.tsx
+import newSet from '@iconify-json/&lt;set-name&gt;/icons.json';
+addCollection(newSet);</code></pre>
+</div>
+
+<!-- ─────────────────── SECTION 19 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">19</span>
+    <h2>Deployment</h2>
+  </div>
+
+  <h3>Build for Production</h3>
+  <pre><code>npm run build   # Runs prisma generate → next build
+npm start       # Starts production server</code></pre>
+
+  <h3>Production Checklist</h3>
+  <ul class="checklist">
+    <li>Set all environment variables in the hosting environment</li>
+    <li>Run <code>npx prisma migrate deploy</code> against the production database</li>
+    <li>Ensure <code>db-config.json</code> contains <code>{ "activeDb": "cloud" }</code> on the server</li>
+    <li>Confirm <code>JWT_SECRET</code> is at least 32 random characters</li>
+    <li>Confirm Gmail app password is set (not the account password)</li>
+    <li>Verify <code>DATABASE_URL</code> points to the production CockroachDB cluster</li>
+    <li>Set <code>NODE_ENV=production</code></li>
+    <li>Test login flow end-to-end after deployment</li>
+  </ul>
+</div>
+
+<!-- ─────────────────── SECTION 20 ─────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">20</span>
+    <h2>Troubleshooting</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Error / Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Cannot find module <code>lightningcss.win32-x64-msvc.node</code></td>
+          <td>WSL2 npm installed Linux binaries</td>
+          <td><code>node scripts/fix-wsl-binaries.cjs</code></td>
+        </tr>
+        <tr>
+          <td>Icons missing after cache clear</td>
+          <td>Iconify was fetching from CDN</td>
+          <td>Already fixed — <code>IconifySetup.tsx</code> bundles icons locally</td>
+        </tr>
+        <tr>
+          <td>"Failed to fetch" on notifications after DB switch</td>
+          <td>Prisma client pointing to wrong DB</td>
+          <td>Already fixed — <code>lib/prisma.ts</code> Proxy re-reads config on every call</td>
+        </tr>
+        <tr>
+          <td>QR code shows wrong IP address</td>
+          <td>WSL2 virtual IP instead of Windows LAN IP</td>
+          <td>Already fixed — <code>GET /api/local-ip</code> calls PowerShell</td>
+        </tr>
+        <tr>
+          <td>User stuck on "Pending Approval"</td>
+          <td>Admin has not approved the account</td>
+          <td>Admin: Profile → User Management → Approve</td>
+        </tr>
+        <tr>
+          <td>Middleware deprecation warning</td>
+          <td>Old <code>middleware.ts</code> export name</td>
+          <td>Already fixed — renamed to <code>proxy.ts</code></td>
+        </tr>
+        <tr>
+          <td>Prisma migration errors on local DB</td>
+          <td>Schema out of sync</td>
+          <td><code>npx prisma db push --config prisma.local.config.ts</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="margin-top:60px;padding-top:24px;border-top:2px solid var(--border);text-align:center;color:var(--muted);font-size:11px">
+  <strong>DOST Document Archival System</strong> &nbsp;·&nbsp; Version 0.1.0 &nbsp;·&nbsp; April 2026<br>
+  Department of Science and Technology – Provincial Science and Technology Office in Misamis Oriental<br>
+  <em>Confidential Internal Technical Document</em>
+</div>
+
+</div><!-- end .content -->
+
+<!-- ── Print / Save PDF button ── -->
+<button class="print-btn" onclick="window.print()">
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+  Save as PDF
+</button>
+
+</body>
+</html>
